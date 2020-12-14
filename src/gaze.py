@@ -12,12 +12,8 @@ from scipy.spatial import distance
 from openvino.inference_engine import IECore
 import matplotlib.pyplot as plt
 import paho.mqtt.client as paho
-from firebase import firebase
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
 
-#test
+
 file_directory='C:\\Users\Administrator\\Documents\\Intel\\OpenVINO\\omz_demos_build\\intel64\\Release\\gaze_estimation_Project\\'
 file_det  = 'face-detection-adas-0001'
 file_hp   = 'head-pose-estimation-adas-0001'
@@ -88,7 +84,6 @@ def draw_axes(frame, center_of_face, yaw, pitch, roll, scale, focal_length):
     p2 = (int(xp2), int(yp2))
     cv2.line(frame, (cx, cy), p2, (0, 0, 255), 2)
     cv2.putText(frame, 'pitch'+str(pitch), (cx+100, cy), cv2.FONT_HERSHEY_SIMPLEX, .5, (0, 0, 255), 1)
-
 
     xp2 = (yaxis[0] / yaxis[2] * camera_matrix[0][0]) + cx
     yp2 = (yaxis[1] / yaxis[2] * camera_matrix[1][1]) + cy
@@ -271,7 +266,7 @@ def main():
     time_start=[0]*100
     time_end=[0]*100
     time_last=[0]*100
-    server_flag=True
+    server_flag=False
     flag=[False]*100
     flag_male=[False]*100
     flag_age_under20=[False]*100
@@ -333,7 +328,6 @@ def main():
             # draw faces
             cv2.rectangle(out_frame, (xmin, ymin), (xmax, ymax), (0, 255, 0), 1)
             cv2.putText(out_frame, "Face: "+ str(i), (xmin, ymin-80), cv2.FONT_HERSHEY_SIMPLEX, .7, (155, 0, 255), 2)
-
 
 
             # Head pose
@@ -405,7 +399,6 @@ def main():
                         client.disconnect()
                     except:
                         print("unable to connect the server")
-
                     flag[i]=False
                     if flag_male[i]:
                         counter_male+=1
