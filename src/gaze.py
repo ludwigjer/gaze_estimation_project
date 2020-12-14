@@ -14,6 +14,10 @@ import matplotlib.pyplot as plt
 import paho.mqtt.client as paho
 
 
+
+
+#test 2
+
 file_directory='C:\\Users\Administrator\\Documents\\Intel\\OpenVINO\\omz_demos_build\\intel64\\Release\\gaze_estimation_Project\\'
 file_det  = 'face-detection-adas-0001'
 file_hp   = 'head-pose-estimation-adas-0001'
