@@ -34,7 +34,7 @@ def on_message(client, userdata, msg):
                ' age :' + age + ',' + \
                ' Gaze last for ' + time_last + ' seconds.')
 
-    add_to_PostgreSql(local_time, gender, age, time_last)
+    #add_to_PostgreSql(local_time, gender, age, time_last)
 
 def add_to_PostgreSql(local_time,gender,age,time_last):
     # PostgreSql

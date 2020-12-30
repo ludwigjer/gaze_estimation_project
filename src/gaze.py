@@ -1,21 +1,25 @@
 import sys
 import math
-import random
 import numpy as np
-from PIL import Image
-from numpy import linalg as LA
 import cv2
 import os
-import logging as log
 import time
-from scipy.spatial import distance
-from openvino.inference_engine import IECore
+import subprocess
+subprocess.call([r'C:\Program Files (x86)\Intel\openvino_2021.1.110\bin\setupvars.bat'])
+import logging as log
+from PIL import Image
 import matplotlib.pyplot as plt
+from scipy.spatial import distance
+from numpy import linalg as LA
+import sys
+
+print(sys.executable)
+from openvino.inference_engine import IECore
 import paho.mqtt.client as paho
 
 
 file_directory='E:\\Users\Administrator\\Documents\\PycharmProjects\\Gaze_Detection_Analyze_Application\\model\\'
-file_det  = 'face-detection-adas-0001'
+file_det  = 'face-detection-0204'
 file_hp   = 'head-pose-estimation-adas-0001'
 file_gaze = 'gaze-estimation-adas-0002'
 file_lm   = 'facial-landmarks-35-adas-0002'
@@ -132,6 +136,10 @@ def get_detect_distance_ratio(width_panel,height_panel,face_percentage_of_frame)
     ratio=face_percentage_of_frame/area
     return ratio
 
+
+
+
+
 class Network:
     '''
     Load and store information for working with the Inference Engine,
@@ -145,7 +153,6 @@ class Network:
         self.output_blob = None
         self.exec_network = None
         self.infer_request = None
-
 
     def load_model(self, model, device="CPU", cpu_extension=None):
         '''
@@ -241,6 +248,7 @@ exec_net_ag=inference_network.exec_network
 input_shape_gaze,out_shape_gaze=inference_network.load_model(model_gaze+ '.xml', 'CPU', None) # [1, 3, 60, 60] -
 input_shape_gaze  = [1, 3, 60, 60]
 exec_net_gaze = inference_network.exec_network
+
 
 
 
@@ -363,12 +371,17 @@ def main():
             # looking time
             if (-20 < yaw < 20) and (-30 < pitch < 15):
                 time_end_array.append(time_end[i])
-                time_start[i]=time.time()
+                time_start[i]=time.perf_counter()
                 time_start_array.append(time_start[i])
                 local_time = time.strftime('%Y-%m-%d %H:%M:%S')
                 local_time_array.append(local_time)
                 print(gender)
                 cv2.putText(out_frame, "you are looking" , (xmin, ymax+30), cv2.FONT_HERSHEY_SIMPLEX, .7, (155, 255, 255), 2)
+                cv2.putText(out_frame, "time last :"+str(time_last[i]),(xmin, ymax + 60), cv2.FONT_HERSHEY_SIMPLEX, .7, (155, 255, 255), 2)
+                cv2.putText(out_frame, "start :" + str(time_start_array[i]),
+                            (xmin, ymax + 90), cv2.FONT_HERSHEY_SIMPLEX, .7, (155, 255, 255), 2)
+                cv2.putText(out_frame, "finish :" + str(time_end_array[i] ),
+                            (xmin, ymax + 120), cv2.FONT_HERSHEY_SIMPLEX, .7, (155, 255, 255), 2)
                 if time_last[i]<-3:
                     flag[i]=True
                     if gender=='Male':
@@ -381,7 +394,7 @@ def main():
                         flag_age_over40[i] =True
             else:
                 time_start_array.append(time_start[i])
-                time_end[i]=time.time()
+                time_end[i]=time.perf_counter()
                 time_end_array.append(time_end[i])
                 if flag[i]:
                     counter+=1
@@ -441,10 +454,6 @@ def main():
             cv2.putText(out_frame, 'Audience under 20: ' + str(format(age_under20_percentage, '.2f')) + '%',(15 * scaler, 180 * scaler), cv2.FONT_HERSHEY_SIMPLEX, 1, (123, 44, 15), 2)
             cv2.putText(out_frame, 'Audience 20 to 40: ' + str(format(age_20to40_percentage, '.2f')) + '%',(15 * scaler, 220 * scaler), cv2.FONT_HERSHEY_SIMPLEX, 1, (66, 244, 188), 2)
             cv2.putText(out_frame, 'Audience over 40: ' + str(format(age_over40_percentage, '.2f')) + '%',(15 * scaler, 260 * scaler), cv2.FONT_HERSHEY_SIMPLEX, 1, (111, 166, 233), 2)
-
-
-
-
 
 
         # Use Landmark to find eyes
