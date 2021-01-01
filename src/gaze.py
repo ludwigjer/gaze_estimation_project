@@ -388,9 +388,9 @@ def main():
                         flag_male[i] = True
                     if age<20:
                         flag_age_under20[i] =True
-                    if 20<=age<=40:
+                    elif 20<=age<=40:
                         flag_age_20to40[i] =True
-                    if age>40:
+                    elif age>40:
                         flag_age_over40[i] =True
             else:
                 time_start_array.append(time_start[i])
@@ -419,10 +419,10 @@ def main():
                     if flag_age_under20[i]:
                         counter_age_under20+=1
                         flag_age_under20[i]=False
-                    if flag_age_20to40[i]:
+                    elif flag_age_20to40[i]:
                         counter_age_20to40+=1
                         flag_age_20to40[i]=False
-                    if flag_age_over40[i]:
+                    elif flag_age_over40[i]:
                         counter_age_over40+=1
                         flag_age_over40[i]=False
 
@@ -458,7 +458,6 @@ def main():
 
         # Use Landmark to find eyes
             frame_preprocessed = preprocessing(face_frame, input_shape_lm[2], input_shape_lm[3])
-
             exec_net_lm.infer(inputs={input_name_lm: frame_preprocessed})
 
             normed_landmarks = (exec_net_lm.requests[0].outputs[out_name_lm][0])[0:8]

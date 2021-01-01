@@ -77,6 +77,30 @@ select
   count(1) as people_per_day
 from gazedata
 group by 1 order by date_trunc
+
+
+
+
+SELECT *
+FROM  (
+   SELECT day::date
+   FROM   generate_series(timestamp '2020-11-21'
+                        , NOW()
+                        , interval  '1 day') day
+   ) d
+LEFT   JOIN (
+   SELECT date_trunc('day', timestamps)::date AS day
+        , count(*) AS people_per_day
+   FROM   gazedata
+   WHERE  timestamps >= date '2020-11-21'
+   AND    timestamps <= NOW()
+-- AND    ... more conditions
+   GROUP  BY 1
+   ) t USING (day)
+ORDER  BY day;
+
+
+
 """,'Total per day')
 
 rows2 = prepare_plot("""
