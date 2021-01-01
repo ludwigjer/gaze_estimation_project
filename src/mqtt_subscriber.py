@@ -2,6 +2,7 @@ import time
 import paho.mqtt.client as paho
 import psycopg2
 import psycopg2.extras
+import sys
 
 DB_NAME='anihlpmu'
 DB_USER ='anihlpmu'

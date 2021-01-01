@@ -269,6 +269,7 @@ def main():
     total_time_array = [0]*100000
     server_flag=False
     flag=[False]*100000
+    flag_first = [True] * 100000
     flag_male=[False]*100000
     flag_age_under20=[False]*100000
     flag_age_20to40=[False]*100000
@@ -294,6 +295,7 @@ def main():
         scaler = max(int(frame.shape[0] / 1000), 1)
         local_time_array = []
         face_array=[]
+
 
         # frame = resize_fram(frame,640)
         out_frame = frame.copy()
@@ -337,9 +339,14 @@ def main():
                 area = ((ymax - ymin) * (xmax - xmin))
                 face_percentage_of_frame = int(np.sqrt(area) / np.sqrt(frame_w * frame_h) * 100)
                 detect_distance_ratio = get_detect_distance_ratio(width_panel, height_panel, face_percentage_of_frame)
-                # if(detect_distance_ratio<0.035):
-                #     print("error")
-                #     continue
+                #filter faces by distance
+                if(detect_distance_ratio<0.035):
+                    print("face: ",ids[i],'percentage of frame: ',face_percentage_of_frame, 'is ignored')
+                    break
+                # filter faces if looked over 3 times
+                if(counter_array[ids[i]]>3):
+                    print("ignore face :",ids[i])
+                    break
                 cv2.rectangle(out_frame, (box[1], box[2]), (box[3], box[4]), (0, 255, 0), 2)
                 cv2.putText(out_frame, "Face: " + str(ids[i]), (box[1], box[2] - 80), cv2.FONT_HERSHEY_SIMPLEX, .7,
                             (155, 0, 255), 2)
@@ -360,7 +367,7 @@ def main():
                 draw_axes(out_frame, center_of_face, yaw, pitch, roll, scale, focal_length)
 
 
-                #  Age/Gender Recognition
+                # Age/Gender Recognition
                 frame_preprocessed = preprocessing(face_frame, input_shape_ag[2], input_shape_ag[3])
                 exec_net_ag.infer(inputs={input_name_ag: frame_preprocessed})
                 age = exec_net_ag.requests[0].outputs['age_conv3']
@@ -374,6 +381,11 @@ def main():
 
                 # looking time
                 if (-20 < yaw < 20) and (-30 < pitch < 15):
+                    #for new face 1st time ,set end time to current time then break.
+                    if(flag_first[ids[i]]):
+                        flag_first[ids[i]]=False
+                        time_end[ids[i]] = time.perf_counter()
+                        break
                     age_array[ids[i]].append(age)
                     gender_array[ids[i]].append(gender)
                     print("for ",ids[i], "age_array :" ,age_array[ids[i]])
@@ -382,27 +394,20 @@ def main():
                     local_time_array.append(local_time)
                     cv2.putText(out_frame, "you are looking" , (xmin, ymax+30), cv2.FONT_HERSHEY_SIMPLEX, .7, (155, 255, 255), 2)
                     cv2.putText(out_frame, "time last :"+str(abs(time_last[ids[i]])),(xmin, ymax + 60), cv2.FONT_HERSHEY_SIMPLEX, .7, (255, 12, 78), 2)
-                    cv2.putText(out_frame, "your looked:" + str(counter_array[ids[i]])+" times",
-                                (xmin, ymax + 90), cv2.FONT_HERSHEY_SIMPLEX, .7, (255, 54, 120), 2)
-                    cv2.putText(out_frame, "total time :" + str(total_time_array[ids[i]])+" second",
-                                (xmin, ymax + 120), cv2.FONT_HERSHEY_SIMPLEX, .7, (45, 12, 166), 2)
+
                     if time_last[ids[i]]<-3:
                         flag[ids[i]]=True
                         if gender=='Male':
                             flag_male[ids[i]] = True
                         if age<20:
                             flag_age_under20[ids[i]] =True
-                        if 20<=age<=40:
+                        elif 20<=age<=40:
                             flag_age_20to40[ids[i]] =True
-                        if age>40:
+                        elif age>40:
                             flag_age_over40[ids[i]] =True
                 else:
                     time_end[ids[i]]=time.perf_counter()
-                    cv2.putText(out_frame, "your looked:" + str(counter_array[ids[i]])+" times",
-                                (xmin, ymax + 90), cv2.FONT_HERSHEY_SIMPLEX, .7, (255, 54, 120), 2)
-                    cv2.putText(out_frame, "total time :" + str(total_time_array[ids[i]])+" second",
-                                (xmin, ymax + 120), cv2.FONT_HERSHEY_SIMPLEX, .7, (45, 12, 166), 2)
-
+                    age = round(np.mean(age_array[ids[i]]), 1)
                     gender = most_frequent_gender(gender_array[ids[i]])
                     del age_array[ids[i]][:],gender_array[ids[i]][:]
                     if flag[ids[i]]:
@@ -426,25 +431,29 @@ def main():
                         if flag_male[ids[i]]:
                             counter_male+=1
                             flag_male[ids[i]]=False
+
                         if flag_age_under20[ids[i]]:
-                            counter_age_under20+=1
-                            flag_age_under20[ids[i]]=False
-                        if flag_age_20to40[ids[i]]:
-                            counter_age_20to40+=1
-                            flag_age_20to40[ids[i]]=False
-                        if flag_age_over40[ids[i]]:
-                            counter_age_over40+=1
-                            flag_age_over40[ids[i]]=False
+                            counter_age_under20 += 1
+                            flag_age_under20[ids[i]] = False
+                        elif flag_age_20to40[ids[i]]:
+                            counter_age_20to40 += 1
+                            flag_age_20to40[ids[i]] = False
+                        elif flag_age_over40[ids[i]]:
+                            counter_age_over40 += 1
+                            flag_age_over40[ids[i]] = False
 
-
-                print('time starts looking:',time_start[ids[i]])
-                print('time finishes looking:',time_end[ids[i]])
+                # print('time starts looking:',time_start[ids[i]])
+                # print('time finishes looking:',time_end[ids[i]])
+                cv2.putText(out_frame, "your looked:" + str(counter_array[ids[i]])+" times",
+                            (xmin, ymax + 90), cv2.FONT_HERSHEY_SIMPLEX, .7, (255, 54, 120), 2)
+                cv2.putText(out_frame, "total time :" + str(total_time_array[ids[i]])+" second",
+                            (xmin, ymax + 120), cv2.FONT_HERSHEY_SIMPLEX, .7, (45, 12, 166), 2)
                 time_last[ids[i]]=round(time_end[ids[i]] - time_start[ids[i]],2)
+
                 if(time_last[ids[i]]<0):
                     print('looking last for : ', abs(time_last[ids[i]]), 'seconds')
                 else:
                     print('not looking for : ', abs(time_last[ids[i]]), 'seconds')
-
 
                 try:
                     male_percentage=(counter_male/counter) *100
@@ -466,109 +475,6 @@ def main():
                 cv2.putText(out_frame, 'Audience under 20: ' + str(format(age_under20_percentage, '.2f')) + '%',(15 * scaler, 180 * scaler), cv2.FONT_HERSHEY_SIMPLEX, 1, (123, 44, 15), 2)
                 cv2.putText(out_frame, 'Audience 20 to 40: ' + str(format(age_20to40_percentage, '.2f')) + '%',(15 * scaler, 220 * scaler), cv2.FONT_HERSHEY_SIMPLEX, 1, (66, 244, 188), 2)
                 cv2.putText(out_frame, 'Audience over 40: ' + str(format(age_over40_percentage, '.2f')) + '%',(15 * scaler, 260 * scaler), cv2.FONT_HERSHEY_SIMPLEX, 1, (111, 166, 233), 2)
-
-
-
-
-
-            # # looking time
-            # if (-20 < yaw < 20) and (-30 < pitch < 15):
-            #
-            #
-            #
-            #     time_start[i]=time.perf_counter()
-            #     time_start_array.append(time_start[i])
-            #     local_time = time.strftime('%Y-%m-%d %H:%M:%S')
-            #     local_time_array.append(local_time)
-            #     cv2.putText(out_frame, "you are looking" , (xmin, ymax+30), cv2.FONT_HERSHEY_SIMPLEX, .7, (155, 255, 255), 2)
-            #     cv2.putText(out_frame, "time last :"+str(time_last[i]),(xmin, ymax + 60), cv2.FONT_HERSHEY_SIMPLEX, .7, (155, 255, 255), 2)
-            #     cv2.putText(out_frame, "start :" + str(time_start[i]),
-            #                 (xmin, ymax + 90), cv2.FONT_HERSHEY_SIMPLEX, .7, (155, 255, 255), 2)
-            #     cv2.putText(out_frame, "finish :" + str(time_end[i] ),
-            #                 (xmin, ymax + 120), cv2.FONT_HERSHEY_SIMPLEX, .7, (155, 255, 255), 2)
-            #
-            #
-            #     if time_last[i]<-3:
-            #         flag[i]=True
-            #         if gender=='Male':
-            #             flag_male[i] = True
-            #         if age<20:
-            #             flag_age_under20[i] =True
-            #         if 20<=age<=40:
-            #             flag_age_20to40[i] =True
-            #         if age>40:
-            #             flag_age_over40[i] =True
-            # else:
-            #     time_end[i]=time.perf_counter()
-            #     time_end_array.append(time_end[i])
-            #     cv2.putText(out_frame, "start :" + str(time_start[i]),
-            #                 (xmin, ymax + 90), cv2.FONT_HERSHEY_SIMPLEX, .7, (155, 255, 255), 2)
-            #     cv2.putText(out_frame, "finish :" + str(time_end[i] ),
-            #                 (xmin, ymax + 120), cv2.FONT_HERSHEY_SIMPLEX, .7, (155, 255, 255), 2)
-            #
-            #
-            #     if flag[i]:
-            #         counter+=1
-            #         print_msg='Log'+str(counter)+': '+\
-            #                  'Local time: '+ local_time+','+\
-            #                  ' gender: '+ gender+','+\
-            #                  ' age :'+ str(age)+','+ \
-            #                  ' Gaze last for '+ str(abs(time_last[i]))+ ' seconds.'
-            #         mqtt_msg=local_time+" "+str(counter)+" "+gender+" "+ str(age) +" "+ str(abs(time_last[i]))
-            #
-            #         print(print_msg)
-            #         try:
-            #             client.publish('info', mqtt_msg, 0)
-            #             client.disconnect()
-            #         except:
-            #             print("unable to connect the server")
-            #         flag[i]=False
-            #         if flag_male[i]:
-            #             counter_male+=1
-            #             flag_male[i]=False
-            #         if flag_age_under20[i]:
-            #             counter_age_under20+=1
-            #             flag_age_under20[i]=False
-            #         if flag_age_20to40[i]:
-            #             counter_age_20to40+=1
-            #             flag_age_20to40[i]=False
-            #         if flag_age_over40[i]:
-            #             counter_age_over40+=1
-            #             flag_age_over40[i]=False
-            #
-            #
-            # print('time starts looking:',time_start[i])
-            # print('time finishes looking:',time_end[i])
-            # time_last[i]=round(time_end[i] - time_start[i],2)
-            # if(time_last[i]<0):
-            #     print('looking last for : ', abs(time_last[i]), 'seconds')
-            # else:
-            #     print('not looking for : ', abs(time_last[i]), 'seconds')
-            #
-            #
-            # try:
-            #     male_percentage=(counter_male/counter) *100
-            #     female_percentage=100-male_percentage
-            #     age_under20_percentage=(counter_age_under20/counter) *100
-            #     age_20to40_percentage=(counter_age_20to40/counter) *100
-            #     age_over40_percentage=(counter_age_over40/counter) *100
-            #     #print(str(counter),"<20 :",str(counter_age_under20),"20-40  :",str(counter_age_20to40),"40 > :",str(counter_age_over40)," ",)
-            # except ZeroDivisionError:
-            #     male_percentage = 0
-            #     female_percentage=0
-            #     age_under20_percentage=0
-            #     age_20to40_percentage=0
-            #     age_over40_percentage=0
-            #
-            # cv2.putText(out_frame, 'Have been looked: ' +str(counter)+' times', (15 * scaler, 60 * scaler), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 155, 255), 2)
-            # cv2.putText(out_frame, 'Male looked: ' + str(format(male_percentage, '.2f'))+ '%', (15 * scaler, 100 * scaler), cv2.FONT_HERSHEY_SIMPLEX, 1, (25, 15, 15), 2)
-            # cv2.putText(out_frame, 'Female looked: ' + str(format(female_percentage, '.2f')) + '%',(15 * scaler, 140 * scaler), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 155, 15), 2)
-            # cv2.putText(out_frame, 'Audience under 20: ' + str(format(age_under20_percentage, '.2f')) + '%',(15 * scaler, 180 * scaler), cv2.FONT_HERSHEY_SIMPLEX, 1, (123, 44, 15), 2)
-            # cv2.putText(out_frame, 'Audience 20 to 40: ' + str(format(age_20to40_percentage, '.2f')) + '%',(15 * scaler, 220 * scaler), cv2.FONT_HERSHEY_SIMPLEX, 1, (66, 244, 188), 2)
-            # cv2.putText(out_frame, 'Audience over 40: ' + str(format(age_over40_percentage, '.2f')) + '%',(15 * scaler, 260 * scaler), cv2.FONT_HERSHEY_SIMPLEX, 1, (111, 166, 233), 2)
-
-
-
 
 
         out_frame = np.clip(out_frame, 0, 255)
