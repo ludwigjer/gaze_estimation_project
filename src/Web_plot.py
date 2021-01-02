@@ -43,7 +43,6 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 # assume you have a "long-form" data frame
-# see https://plotly.com/python/px-arguments/ for more options
 
 colors = {
     'background': '#111111',
@@ -67,21 +66,12 @@ def prepare_plot(query,type):
     cur.execute(query)
     rows = cur.fetchall()
     for i in rows:
-        print("date: ", i[0], ", total: ", i[1])
+        print("date: ", i[0], ", total: ", i[2])
     rows = np.array(rows)
     return rows
 
 rows1 = prepare_plot("""
-select
-  date_trunc('day', timestamps), -- or hour, day, week, month, year
-  count(1) as people_per_day
-from gazedata
-group by 1 order by date_trunc
-
-
-
-
-SELECT *
+SELECT *,COALESCE(count, 0) AS people_per_day
 FROM  (
    SELECT day::date
    FROM   generate_series(timestamp '2020-11-21'
@@ -90,72 +80,140 @@ FROM  (
    ) d
 LEFT   JOIN (
    SELECT date_trunc('day', timestamps)::date AS day
-        , count(*) AS people_per_day
+        , count(*) 
    FROM   gazedata
    WHERE  timestamps >= date '2020-11-21'
    AND    timestamps <= NOW()
--- AND    ... more conditions
    GROUP  BY 1
    ) t USING (day)
 ORDER  BY day;
-
-
-
 """,'Total per day')
 
 rows2 = prepare_plot("""
-select
-  date_trunc('day', timestamps), -- or hour, day, week, month, year
-  count(1) as male_per_day
-from gazedata where gender='Male'
-group by 1 order by date_trunc
+SELECT *,COALESCE(count, 0) AS people_per_day
+FROM  (
+   SELECT day::date
+   FROM   generate_series(timestamp '2020-11-21'
+                        , NOW()
+                        , interval  '1 day') day
+   ) d
+LEFT   JOIN (
+   SELECT date_trunc('day', timestamps)::date AS day
+        , count(*) 
+   FROM   gazedata
+   WHERE  timestamps >= date '2020-11-21'
+   AND    timestamps <= NOW()
+   AND    gender='Male'
+   GROUP  BY 1
+   ) t USING (day)
+ORDER  BY day;
 """,'Male per day')
 
 rows3 = prepare_plot("""
-select
-  date_trunc('day', timestamps), -- or hour, day, week, month, year
-  count(1) as female_per_day
-from gazedata where gender='Female'
-group by 1 order by date_trunc
-""",'Fale per day')
+SELECT *,COALESCE(count, 0) AS people_per_day
+FROM  (
+   SELECT day::date
+   FROM   generate_series(timestamp '2020-11-21'
+                        , NOW()
+                        , interval  '1 day') day
+   ) d
+LEFT   JOIN (
+   SELECT date_trunc('day', timestamps)::date AS day
+        , count(*) 
+   FROM   gazedata
+   WHERE  timestamps >= date '2020-11-21'
+   AND    timestamps <= NOW()
+   AND    gender='Female'
+   GROUP  BY 1
+   ) t USING (day)
+ORDER  BY day;
+""",'Female per day')
 rows4 = prepare_plot("""
-select
-  date_trunc('day', timestamps), -- or hour, day, week, month, year
-  count(1) as people_per_day
-from gazedata where age < 20
-group by  date_trunc('day', timestamps) order by date_trunc;
+SELECT *,COALESCE(count, 0) AS people_per_day
+FROM  (
+   SELECT day::date
+   FROM   generate_series(timestamp '2020-11-21'
+                        , NOW()
+                        , interval  '1 day') day
+   ) d
+LEFT   JOIN (
+   SELECT date_trunc('day', timestamps)::date AS day
+        , count(*) 
+   FROM   gazedata
+   WHERE  timestamps >= date '2020-11-21'
+   AND    timestamps <= NOW()
+   AND    age < 20
+   GROUP  BY 1
+   ) t USING (day)
+ORDER  BY day;
 """,'Age under 20 per day')
 rows5 = prepare_plot("""
-select
-  date_trunc('day', timestamps), -- or hour, day, week, month, year
-  count(1) as people_per_day
-from gazedata where age >= 20 and age <= 40 
-group by  date_trunc('day', timestamps) order by date_trunc;
+SELECT *,COALESCE(count, 0) AS people_per_day
+FROM  (
+   SELECT day::date
+   FROM   generate_series(timestamp '2020-11-21'
+                        , NOW()
+                        , interval  '1 day') day
+   ) d
+LEFT   JOIN (
+   SELECT date_trunc('day', timestamps)::date AS day
+        , count(*) 
+   FROM   gazedata
+   WHERE  timestamps >= date '2020-11-21'
+   AND    timestamps <= NOW()
+   AND    age >= 20 and age <= 40 
+   GROUP  BY 1
+   ) t USING (day)
+ORDER  BY day;
 """,'Age 20 to 40 per day')
 rows6 = prepare_plot("""
-select
-  date_trunc('day', timestamps), -- or hour, day, week, month, year
-  count(1) as people_per_day
-from gazedata where age > 40
-group by  date_trunc('day', timestamps) order by date_trunc;
+SELECT *,COALESCE(count, 0) AS people_per_day
+FROM  (
+   SELECT day::date
+   FROM   generate_series(timestamp '2020-11-21'
+                        , NOW()
+                        , interval  '1 day') day
+   ) d
+LEFT   JOIN (
+   SELECT date_trunc('day', timestamps)::date AS day
+        , count(*) 
+   FROM   gazedata
+   WHERE  timestamps >= date '2020-11-21'
+   AND    timestamps <= NOW()
+   AND    age >40
+   GROUP  BY 1
+   ) t USING (day)
+ORDER  BY day;
 """,'Age over 40 per day')
 rows7 = prepare_plot("""
-select
-  date_trunc('day', timestamps), -- or hour, day, week, month, year
-  sum(timelast) AS timelast
-from gazedata
-group by  date_trunc('day', timestamps) order by date_trunc;
+SELECT *,COALESCE(sum, 0) AS timelast
+FROM  (
+   SELECT day::date
+   FROM   generate_series(timestamp '2020-11-21'
+                        , NOW()
+                        , interval  '1 day') day
+   ) d
+LEFT   JOIN (
+   SELECT date_trunc('day', timestamps)::date AS day
+        , sum(timelast) 
+   FROM   gazedata
+   WHERE  timestamps >= date '2020-11-21'
+   AND    timestamps <= NOW()
+   GROUP  BY 1
+   ) t USING (day)
+ORDER  BY day;
 """,'Total second per day')
 
-line1 =go.Scatter(x=rows1[:,0],y=rows1[:,1], name="All people")
-line2 =go.Scatter(x=rows2[:,0],y=rows2[:,1], name="Male")
-line3 =go.Scatter(x=rows3[:,0],y=rows3[:,1], name="Female")
-line4 =go.Scatter(x=rows4[:,0],y=rows4[:,1], name="Under 20")
-line5 =go.Scatter(x=rows5[:,0],y=rows5[:,1], name="20 to 40")
-line6 =go.Scatter(x=rows6[:,0],y=rows6[:,1], name="Over 40")
+line1 =go.Scatter(x=rows1[:,0],y=rows1[:,2], name="All people")
+line2 =go.Scatter(x=rows2[:,0],y=rows2[:,2], name="Male")
+line3 =go.Scatter(x=rows3[:,0],y=rows3[:,2], name="Female")
+line4 =go.Scatter(x=rows4[:,0],y=rows4[:,2], name="Under 20")
+line5 =go.Scatter(x=rows5[:,0],y=rows5[:,2], name="20 to 40")
+line6 =go.Scatter(x=rows6[:,0],y=rows6[:,2], name="Over 40")
 data_linegraph= [line1,line2,line3,line4,line5,line6]
 layout = go.Layout(title='Number of People Among Different Group')
 fig2=go.Figure(data=data_linegraph, layout=layout)
+
 
 fig.update_layout(
     plot_bgcolor=colors['background'],
