@@ -5,15 +5,10 @@ import cv2
 import time
 import subprocess
 subprocess.call([r'C:\Program Files (x86)\Intel\openvino_2021.1.110\bin\setupvars.bat'])
-import logging as log
-from PIL import Image
-import matplotlib.pyplot as plt
-from scipy.spatial import distance
-from numpy import linalg as LA
 from inference_network import Network
 import paho.mqtt.client as paho
 
-
+#file loading
 file_directory='E:\\Users\Administrator\\Documents\\PycharmProjects\\Gaze_Detection_Analyze_Application\\model\\'
 file_det  = 'face-detection-0204'
 file_rdf  = 'face-reidentification-retail-0095'
@@ -31,7 +26,11 @@ model_er = file_directory+file_er
 model_ag = file_directory+file_ag
 
 
-
+"""
+                [f @ x]     we assume @ = 0 ( @ is a skew parameter)
+camera_matrix = [0 f y]
+                [0 0 1]
+"""
 def build_camera_matrix(center_of_face, focal_length):
 
     cx = int(center_of_face[0])
@@ -45,7 +44,9 @@ def build_camera_matrix(center_of_face, focal_length):
 
     return camera_matrix
 
+
 def draw_axes(frame, center_of_face, yaw, pitch, roll, scale, focal_length):
+
     #Degrees to radians
     yaw_radian = yaw * np.pi / 180.0
     pitch_radian =pitch * np.pi / 180.0
@@ -53,6 +54,7 @@ def draw_axes(frame, center_of_face, yaw, pitch, roll, scale, focal_length):
 
     cx = int(center_of_face[0])
     cy = int(center_of_face[1])
+
     Rx = np.array([[1,                0,                               0],
                    [0,                math.cos(pitch_radian),  -math.sin(pitch_radian)],
                    [0,                math.sin(pitch_radian),   math.cos(pitch_radian)]])
@@ -195,7 +197,6 @@ class Tracker:
         return np.dot(X, Y) / (
             np.linalg.norm(X.T, axis=0).reshape(m, 1) * np.linalg.norm(Y, axis=0)
         )
-
 
 
 

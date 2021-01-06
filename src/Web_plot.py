@@ -1,8 +1,5 @@
 import psycopg2
-import plotly
 import plotly.graph_objects as go
-import chart_studio.plotly as py
-from plotly.subplots import make_subplots
 import plotly.express as px
 import numpy as np
 import pandas as pd

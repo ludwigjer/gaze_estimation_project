@@ -1,4 +1,3 @@
-import time
 import paho.mqtt.client as paho
 import psycopg2
 import psycopg2.extras
