@@ -1,5 +1,8 @@
 import psycopg2
+import plotly
 import plotly.graph_objects as go
+import chart_studio.plotly as py
+from plotly.subplots import make_subplots
 import plotly.express as px
 import numpy as np
 import pandas as pd
@@ -40,6 +43,7 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 # assume you have a "long-form" data frame
+# see https://plotly.com/python/px-arguments/ for more options
 
 colors = {
     'background': '#111111',
@@ -55,7 +59,7 @@ layout = go.Layout(
 data = [trace1]
 fig = go.Figure(data=data, layout=layout)
 
-fig_age_gender_histogram=px.histogram(df, x="age", color="gender",marginal="rug",hover_data=df.columns)
+fig_age_gender_histogram=px.histogram(df, x="age",title='Age Gender Histogram',color="gender",marginal="rug",hover_data=df.columns)
 fig_timelast_gender_histogram=px.histogram(df, x="timelast", color="gender",marginal="rug",hover_data=df.columns)
 
 def prepare_plot(query,type):
@@ -212,16 +216,6 @@ layout = go.Layout(title='Number of People Among Different Group')
 fig2=go.Figure(data=data_linegraph, layout=layout)
 
 
-fig.update_layout(
-    plot_bgcolor=colors['background'],
-    paper_bgcolor=colors['background'],
-    font_color=colors['text']
-)
-fig2.update_layout(
-    plot_bgcolor=colors['background'],
-    paper_bgcolor=colors['background'],
-    font_color=colors['text']
-)
 
 def generate_table(dataframe, max_rows=len(df)):
     return html.Table([
@@ -237,7 +231,6 @@ def generate_table(dataframe, max_rows=len(df)):
 
 
 app.layout = html.Div(
-    style={'backgroundColor': colors['background']},
                       children=[html.H1(
                           children='Gaze Information Analyse',
                           style={
